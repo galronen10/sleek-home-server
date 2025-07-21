@@ -3,7 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 @Entity()
 export class Endpoint {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: string;
 
   @Column({ type: 'timestamptz' })
   nextExpectedCallDate: Date;
@@ -11,8 +11,20 @@ export class Endpoint {
   @Column()
   maliciousCount: number;
 
-  @Column({ array: true })
+  @Column('text', { array: true })
   maliciousList: string[];
+}
+
+export enum EEndpointStatus {
+  stable = 'stable',
+  unstable = 'unstable',
+  inactive = 'inactive',
+}
+
+export interface IEndpointForClient {
+  id: string;
+  maliciousCount: number;
+  status: EEndpointStatus;
 }
 
 export interface IDetectDTO {

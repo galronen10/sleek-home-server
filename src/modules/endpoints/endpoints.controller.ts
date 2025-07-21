@@ -1,13 +1,13 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { EndpointsService } from './endpoints.service';
-import { IDetectDTO } from '@/entities';
+import { IDetectDTO, IEndpointForClient } from '@/entities';
 
 @Controller('endpoints')
 export class EndpointsController {
   constructor(private readonly endpointsService: EndpointsService) {}
 
   @Get()
-  getAll(): Promise<any[]> {
+  getAll(): Promise<IEndpointForClient[]> {
     return this.endpointsService.getAll();
   }
 
