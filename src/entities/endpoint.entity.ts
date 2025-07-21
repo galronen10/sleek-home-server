@@ -1,8 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Endpoint {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn()
   id: string;
 
   @Column({ type: 'timestamptz' })
@@ -28,6 +28,11 @@ export interface IEndpointForClient {
 }
 
 export interface IDetectDTO {
-  endpointId: number;
+  endpointId: string;
   nextExpectedCallDate: Date;
+  filesHashes: string[];
+}
+
+export interface IDetectRes {
+  maliciousFiles: string[];
 }

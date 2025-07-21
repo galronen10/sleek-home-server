@@ -2,43 +2,43 @@ import {
   EEndpointStatus,
   Endpoint,
   IDetectDTO,
+  IDetectRes,
   IEndpointForClient,
   MaliciousFile,
 } from '@/entities';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { addHours, isBefore } from 'date-fns';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 const HOURS_FOR_INACTIVE: number = +(process.env.HOURS_FOR_INACTIVE ?? 24);
 
-interface trimEndpointWithStatus
-  extends Pick<Endpoint, 'id' | 'maliciousCount'> {
-  status: EEndpointStatus;
-}
 @Injectable()
 export class EndpointsService {
   constructor(
     @InjectRepository(Endpoint)
-    private readonly endpointRepository: Repository<Endpoint>,
+    private readonly endpointRepo: Repository<Endpoint>,
     @InjectRepository(MaliciousFile)
-    private readonly maliciousFileRepository: Repository<MaliciousFile>,
+    private readonly maliciousFileRepo: Repository<MaliciousFile>,
   ) {}
 
   async getAll(): Promise<IEndpointForClient[]> {
-    const endpoints = await this.endpointRepository.find({
+    const endpoints = await this.endpointRepo.find({
       select: ['id', 'maliciousCount', 'nextExpectedCallDate'],
     });
 
     const now = new Date();
-    const dateForInactive = addHours(now, HOURS_FOR_INACTIVE);
-
     return endpoints.map((endpoint) => {
       let status: EEndpointStatus;
 
-      if (isBefore(endpoint.nextExpectedCallDate, now))
+      if (isBefore(now, endpoint.nextExpectedCallDate))
         status = EEndpointStatus.stable;
-      else if (isBefore(endpoint.nextExpectedCallDate, dateForInactive))
+      else if (
+        isBefore(
+          now,
+          addHours(endpoint.nextExpectedCallDate, HOURS_FOR_INACTIVE),
+        )
+      )
         status = EEndpointStatus.unstable;
       else status = EEndpointStatus.inactive;
 
@@ -51,12 +51,48 @@ export class EndpointsService {
   }
 
   async getMaliciousList(id: string): Promise<string[]> {
-    const endpoint: Endpoint | null = await this.endpointRepository.findOneBy({
+    const endpoint: Endpoint | null = await this.endpointRepo.findOneBy({
       id,
     });
 
     return endpoint?.maliciousList ?? [];
   }
 
-  async detectEndpointMalicious(detectDTO: IDetectDTO) {}
+  async detectEndpointMalicious(detectDTO: IDetectDTO): Promise<IDetectRes> {
+    const { endpointId, filesHashes, nextExpectedCallDate } = detectDTO;
+
+    const maliciousRecords = await this.maliciousFileRepo.findBy({
+      id: In(filesHashes),
+    });
+
+    const maliciousHashes = maliciousRecords.map((m) => m.id);
+
+    let endpoint = await this.endpointRepo.findOneBy({ id: endpointId });
+
+    if (!endpoint) {
+      endpoint = this.endpointRepo.create({
+        id: endpointId,
+        nextExpectedCallDate,
+        maliciousCount: maliciousHashes.length,
+        maliciousList: maliciousHashes,
+      });
+    } else {
+      endpoint.nextExpectedCallDate = nextExpectedCallDate;
+      endpoint.maliciousCount = maliciousHashes.length;
+      endpoint.maliciousList = maliciousHashes;
+    }
+
+    await this.endpointRepo.save(endpoint);
+
+    return {
+      maliciousFiles: maliciousHashes,
+    };
+  }
+
+  async seedMaliciousFiles(hashes: string[]): Promise<void> {
+    const entities = hashes.map((hash) =>
+      this.maliciousFileRepo.create({ id: hash }),
+    );
+    await this.maliciousFileRepo.save(entities);
+  }
 }
