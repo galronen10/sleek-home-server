@@ -64,6 +64,7 @@ export class EndpointsService {
 
   async detectEndpointMaliciousLogic(
     detectDTO: IDetectDTO,
+    useTimeValidation: boolean = true,
   ): Promise<IDetectRes> {
     const { endpointId, filesHashes, nextExpectedCallDate } = detectDTO;
 
@@ -83,7 +84,10 @@ export class EndpointsService {
         maliciousList: maliciousHashes,
       });
     } else {
-      if (isBefore(nextExpectedCallDate, endpoint.nextExpectedCallDate)) {
+      if (
+        useTimeValidation &&
+        isBefore(nextExpectedCallDate, endpoint.nextExpectedCallDate)
+      ) {
         return {
           maliciousFiles: endpoint.maliciousList,
         };
@@ -101,9 +105,15 @@ export class EndpointsService {
     };
   }
 
-  async detectEndpointMalicious(detectDTO: IDetectDTO): Promise<IDetectRes> {
+  async detectEndpointMalicious(
+    detectDTO: IDetectDTO,
+    useTimeValidation: boolean = true,
+  ): Promise<IDetectRes> {
     try {
-      return await this.detectEndpointMaliciousLogic(detectDTO);
+      return await this.detectEndpointMaliciousLogic(
+        detectDTO,
+        useTimeValidation,
+      );
     } catch (error) {
       console.error(
         'Error in detectEndpointMalicious. Sending to queue.',

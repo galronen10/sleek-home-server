@@ -32,11 +32,11 @@ async function bootstrap() {
     // Vary call date for different statuses
     let nextExpectedCallDate: Date;
     if (i % 3 === 0) {
-      nextExpectedCallDate = subHours(now, 2); // stable
+      nextExpectedCallDate = addHours(now, 2); // stable
     } else if (i % 3 === 1) {
-      nextExpectedCallDate = addHours(now, 2); // unstable
+      nextExpectedCallDate = subHours(now, 2); // unstable
     } else {
-      nextExpectedCallDate = addHours(now, 36); // inactive
+      nextExpectedCallDate = subHours(now, 36); // inactive
     }
 
     // Generate files: 50–100 total, 10–30% malicious
@@ -58,7 +58,7 @@ async function bootstrap() {
     };
 
     try {
-      const result = await endpointService.detectEndpointMalicious(dto);
+      const result = await endpointService.detectEndpointMalicious(dto, false);
       console.log(
         `Endpoint ${i} — Malicious Detected: ${result.maliciousFiles.length}`,
       );
