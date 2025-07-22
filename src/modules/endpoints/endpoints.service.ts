@@ -6,8 +6,10 @@ import {
   IEndpointForClient,
   MaliciousFile,
 } from '@/entities';
-import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Queue } from 'bullmq';
 import { addHours, isBefore } from 'date-fns';
 import { In, Repository } from 'typeorm';
 
@@ -20,6 +22,8 @@ export class EndpointsService {
     private readonly endpointRepo: Repository<Endpoint>,
     @InjectRepository(MaliciousFile)
     private readonly maliciousFileRepo: Repository<MaliciousFile>,
+    @InjectQueue('detect')
+    private readonly detectQueue: Queue,
   ) {}
 
   async getAll(): Promise<IEndpointForClient[]> {
@@ -58,16 +62,18 @@ export class EndpointsService {
     return endpoint?.maliciousList ?? [];
   }
 
-  async detectEndpointMalicious(detectDTO: IDetectDTO): Promise<IDetectRes> {
+  async detectEndpointMaliciousLogic(
+    detectDTO: IDetectDTO,
+  ): Promise<IDetectRes> {
     const { endpointId, filesHashes, nextExpectedCallDate } = detectDTO;
+
+    let endpoint = await this.endpointRepo.findOneBy({ id: endpointId });
 
     const maliciousRecords = await this.maliciousFileRepo.findBy({
       id: In(filesHashes),
     });
 
     const maliciousHashes = maliciousRecords.map((m) => m.id);
-
-    let endpoint = await this.endpointRepo.findOneBy({ id: endpointId });
 
     if (!endpoint) {
       endpoint = this.endpointRepo.create({
@@ -77,6 +83,12 @@ export class EndpointsService {
         maliciousList: maliciousHashes,
       });
     } else {
+      if (isBefore(nextExpectedCallDate, endpoint.nextExpectedCallDate)) {
+        return {
+          maliciousFiles: endpoint.maliciousList,
+        };
+      }
+
       endpoint.nextExpectedCallDate = nextExpectedCallDate;
       endpoint.maliciousCount = maliciousHashes.length;
       endpoint.maliciousList = maliciousHashes;
@@ -87,6 +99,26 @@ export class EndpointsService {
     return {
       maliciousFiles: maliciousHashes,
     };
+  }
+
+  async detectEndpointMalicious(detectDTO: IDetectDTO): Promise<IDetectRes> {
+    try {
+      return await this.detectEndpointMaliciousLogic(detectDTO);
+    } catch (error) {
+      console.error(
+        'Error in detectEndpointMalicious. Sending to queue.',
+        error,
+      );
+      await this.detectQueue.add('detect', detectDTO);
+      throw new HttpException(
+        {
+          status: 'processing',
+          message:
+            'Detection failed, but request was queued for asynchronous processing.',
+        },
+        HttpStatus.ACCEPTED,
+      );
+    }
   }
 
   async seedMaliciousFiles(hashes: string[]): Promise<void> {

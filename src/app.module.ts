@@ -1,10 +1,17 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { EndpointsModule } from './modules';
+import {
+  DetectQueueConsumerModule,
+  DetectQueueModule,
+  EndpointsModule,
+} from './modules';
+import { BullModule } from '@nestjs/bullmq';
+import { redisConfig } from './redis.config';
 
 @Module({
   imports: [
+    BullModule.forRoot({ connection: redisConfig }),
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -16,7 +23,9 @@ import { EndpointsModule } from './modules';
       autoLoadEntities: true,
       synchronize: true,
     }),
+    DetectQueueModule,
     EndpointsModule,
+    DetectQueueConsumerModule,
   ],
 })
 export class AppModule {}

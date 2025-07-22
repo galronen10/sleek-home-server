@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { EndpointsService } from './endpoints.service';
-import { IDetectDTO, IDetectRes, IEndpointForClient } from '@/entities';
+import { IDetectDTO, IEndpointForClient } from '@/entities';
 
 @Controller('endpoints')
 export class EndpointsController {
@@ -17,7 +17,7 @@ export class EndpointsController {
   }
 
   @Post('/detect')
-  detectEndpointMalicious(@Body() detectDTO: IDetectDTO): Promise<IDetectRes> {
+  async detectEndpointMalicious(@Body() detectDTO: IDetectDTO) {
     return this.endpointsService.detectEndpointMalicious(detectDTO);
   }
 
