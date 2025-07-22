@@ -15,7 +15,7 @@ services:
       - DB_PORT=5432
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
-      - DB_DATABASE=sleek-window
+      - DB_DATABASE=sleek_window
       - CLIENT_ORIGIN=http://localhost:5173
     depends_on:
       - redis
@@ -34,7 +34,7 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: sleek_home
+      POSTGRES_DB: sleek_window
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
