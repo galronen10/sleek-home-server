@@ -11,11 +11,11 @@ services:
       - NODE_ENV=production
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - DB_HOST=postgres
+      - DB_HOST=sleek-home-postgres
       - DB_PORT=5432
-      - DB_USERNAME=postgres
+      - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - DB_DATABASE=sleek_window
+      - DB_NAME=sleek_window
       - CLIENT_ORIGIN=http://localhost:5173
     depends_on:
       - redis
@@ -32,7 +32,7 @@ services:
     container_name: sleek-home-postgres
     restart: always
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: sleek_window
       POSTGRES_USER: postgres
