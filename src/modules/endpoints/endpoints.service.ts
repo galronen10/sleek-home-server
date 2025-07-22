@@ -67,13 +67,13 @@ export class EndpointsService {
   ): Promise<IDetectRes> {
     const { endpointId, filesHashes, nextExpectedCallDate } = detectDTO;
 
+    let endpoint = await this.endpointRepo.findOneBy({ id: endpointId });
+
     const maliciousRecords = await this.maliciousFileRepo.findBy({
       id: In(filesHashes),
     });
 
     const maliciousHashes = maliciousRecords.map((m) => m.id);
-
-    let endpoint = await this.endpointRepo.findOneBy({ id: endpointId });
 
     if (!endpoint) {
       endpoint = this.endpointRepo.create({
@@ -83,6 +83,12 @@ export class EndpointsService {
         maliciousList: maliciousHashes,
       });
     } else {
+      if (isBefore(nextExpectedCallDate, endpoint.nextExpectedCallDate)) {
+        return {
+          maliciousFiles: endpoint.maliciousList,
+        };
+      }
+
       endpoint.nextExpectedCallDate = nextExpectedCallDate;
       endpoint.maliciousCount = maliciousHashes.length;
       endpoint.maliciousList = maliciousHashes;
