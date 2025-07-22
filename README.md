@@ -180,11 +180,7 @@ ping
 
 ---
 
-## 📝 Assumptions (Fill in as needed)
+## 📝 Assumptions
 
-* Application URL: `http://localhost:3000`
-* PostgreSQL version: \_\_\_\_
-* Redis version: \_\_\_\_
-* Seed data is assumed to reflect the following conditions: \_\_\_\_
-* Auth / Security layers (if any): \_\_\_\_
+* every time endpoint send a detect request the nextExpectedCallDate property in the request is after the current time and after that was received in the previous request if there was one
 
