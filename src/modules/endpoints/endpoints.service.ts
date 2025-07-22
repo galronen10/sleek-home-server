@@ -7,7 +7,7 @@ import {
   MaliciousFile,
 } from '@/entities';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Queue } from 'bullmq';
 import { addHours, isBefore } from 'date-fns';
@@ -104,7 +104,14 @@ export class EndpointsService {
         error,
       );
       await this.detectQueue.add('detect', detectDTO);
-      return { maliciousFiles: [] };
+      throw new HttpException(
+        {
+          status: 'processing',
+          message:
+            'Detection failed, but request was queued for asynchronous processing.',
+        },
+        HttpStatus.ACCEPTED,
+      );
     }
   }
 

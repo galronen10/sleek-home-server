@@ -57,10 +57,14 @@ async function bootstrap() {
       filesHashes: allFiles,
     };
 
-    const result = await endpointService.detectEndpointMalicious(dto);
-    console.log(
-      `Endpoint ${i} — Malicious Detected: ${result.maliciousFiles.length}`,
-    );
+    try {
+      const result = await endpointService.detectEndpointMalicious(dto);
+      console.log(
+        `Endpoint ${i} — Malicious Detected: ${result.maliciousFiles.length}`,
+      );
+    } catch (error) {
+      console.log(`got error but continue with the rest endpoints:  ${error}`);
+    }
   }
 
   await app.close();
