@@ -6,8 +6,10 @@ import {
   IEndpointForClient,
   MaliciousFile,
 } from '@/entities';
+import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Queue } from 'bullmq';
 import { addHours, isBefore } from 'date-fns';
 import { In, Repository } from 'typeorm';
 
@@ -20,6 +22,8 @@ export class EndpointsService {
     private readonly endpointRepo: Repository<Endpoint>,
     @InjectRepository(MaliciousFile)
     private readonly maliciousFileRepo: Repository<MaliciousFile>,
+    @InjectQueue('detect')
+    private readonly detectQueue: Queue,
   ) {}
 
   async getAll(): Promise<IEndpointForClient[]> {
@@ -58,7 +62,9 @@ export class EndpointsService {
     return endpoint?.maliciousList ?? [];
   }
 
-  async detectEndpointMalicious(detectDTO: IDetectDTO): Promise<IDetectRes> {
+  async detectEndpointMaliciousLogic(
+    detectDTO: IDetectDTO,
+  ): Promise<IDetectRes> {
     const { endpointId, filesHashes, nextExpectedCallDate } = detectDTO;
 
     const maliciousRecords = await this.maliciousFileRepo.findBy({
@@ -87,6 +93,19 @@ export class EndpointsService {
     return {
       maliciousFiles: maliciousHashes,
     };
+  }
+
+  async detectEndpointMalicious(detectDTO: IDetectDTO): Promise<IDetectRes> {
+    try {
+      return await this.detectEndpointMaliciousLogic(detectDTO);
+    } catch (error) {
+      console.error(
+        'Error in detectEndpointMalicious. Sending to queue.',
+        error,
+      );
+      await this.detectQueue.add('detect', detectDTO);
+      return { maliciousFiles: [] };
+    }
   }
 
   async seedMaliciousFiles(hashes: string[]): Promise<void> {
