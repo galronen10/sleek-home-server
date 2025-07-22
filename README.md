@@ -41,7 +41,7 @@ CLIENT_ORIGIN=http://localhost:5173
 ### 3. Start services
 
 ```bash
-make up
+npm run docker:up
 ```
 
 Or use Docker Compose directly:
@@ -57,13 +57,13 @@ docker-compose up --build
 You can run the seed script using:
 
 ```bash
-make seed
+npm run docker:seed
 ```
 
 Or directly using the package.json script:
 
 ```bash
-docker-compose exec server npm run seed:endpoints
+docker-compose exec server npm run seed-endpoints:prod
 ```
 
 This script inserts multiple endpoints and malicious files to help simulate different statuses in the system.
@@ -105,7 +105,7 @@ npm run start:dev
 5. Optionally seed the database:
 
 ```bash
-npm run seed:endpoints
+npm run seed-endpoints
 ```
 
 ---
@@ -139,7 +139,6 @@ src/
 .docker-compose.yml
 .env
 .gitignore
-.makefile
 .prettierrc
 .eslint.config.mjs
 ```
@@ -152,7 +151,7 @@ src/
 npm run start:dev     # Start local dev server
 npm run build         # Build project
 npm run lint          # Lint and check code style
-npm run seed:endpoints  # Seed the database with test data
+npm run seed-endpoints  # Seed the database with test data
 ```
 
 ---
@@ -160,11 +159,11 @@ npm run seed:endpoints  # Seed the database with test data
 ## 💡 Useful Commands for docker
 
 ```bash
-make up           # Start app + dependencies
-make seed         # Run seed script manually
-make logs         # Tail all container logs
-make down         # Stop and remove containers
-make rebuild      # Rebuild the app only
+npm run docker:up           # Start app + dependencies
+npm run docker:seed         # Run seed script manually
+npm run docker:down         # Stop and remove containers
+npm run docker:rebuild      # Rebuild the app only
+npm run docker:Restart      # Restart only app
 ```
 
 ---
